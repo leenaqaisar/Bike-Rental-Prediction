@@ -2,10 +2,11 @@
 import streamlit as st
 import pandas as pd
 import joblib
+from pathlib import Path
 
-# --------------------------------
+# ----------------------------------
 # PAGE CONFIGURATION
-# --------------------------------
+# ----------------------------------
 
 st.set_page_config(
     page_title="Bike Rental Prediction",
@@ -13,149 +14,188 @@ st.set_page_config(
     layout="wide"
 )
 
-# --------------------------------
-# LOAD TRAINED MODEL
-# --------------------------------
+# ----------------------------------
+# LOAD SMALLER TRAINED MODEL
+# ----------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent
 
 @st.cache_resource
 def load_model():
-    model = joblib.load("bike_rental_model.pkl")
-    features = joblib.load("feature_names.pkl")
+    model = joblib.load(
+        BASE_DIR / "bike_rental_model_small.pkl"
+    )
+    features = joblib.load(
+        BASE_DIR / "feature_names.pkl"
+    )
     return model, features
 
 model, features = load_model()
 
-# --------------------------------
-# CUSTOM STYLING
-# --------------------------------
+# ----------------------------------
+# CUSTOM UI DESIGN
+# ----------------------------------
 
 st.markdown("""
 <style>
 .stApp {
     background-color: #f5f7fc;
+    color: #172b4d;
 }
 
 h1, h2, h3 {
-    color: #16365c;
-}
-
-div.stButton > button,
-div.stFormSubmitButton > button {
-    background-color: #1769aa;
-    color: white;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
-    padding: 12px;
-}
-
-div.stButton > button:hover,
-div.stFormSubmitButton > button:hover {
-    background-color: #104b80;
-    color: white;
+    color: #15375d;
 }
 
 [data-testid="stMetric"] {
     background-color: white;
     border: 1px solid #e0e6ef;
-    padding: 18px;
+    padding: 20px;
     border-radius: 12px;
+}
+
+div.stFormSubmitButton > button {
+    background-color: #1769aa;
+    color: white;
+    border-radius: 10px;
+    font-weight: bold;
+    border: none;
+}
+
+div.stFormSubmitButton > button:hover {
+    background-color: #104b80;
+    color: white;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --------------------------------
+# ----------------------------------
 # SIDEBAR
-# --------------------------------
+# ----------------------------------
 
 with st.sidebar:
+
     st.title("🚲 Bike Rental AI")
     st.caption("Machine Learning Assignment 3")
 
     st.divider()
 
     st.subheader("Model Information")
+
     st.write("**Algorithm:** Extra Trees Regressor")
-    st.write("**Cross-Validation:** 10-Fold")
-    st.write("**Mean RMSE:** 40.75")
-    st.write("**Dataset:** UCI Bike Sharing")
+    st.write("**Validation:** 10-Fold CV")
+    st.write("**Mean RMSE:** 41.89")
+    st.write("**Model Size:** 5.06 MB")
 
     st.divider()
 
     st.info(
-        "This application predicts hourly bike rental "
-        "demand using historical weather and time data."
+        "This system predicts hourly bike rentals "
+        "using historical weather and time information."
     )
 
-# --------------------------------
+    st.caption(
+        "Dataset: UCI Bike Sharing (2011-2012)"
+    )
+
+# ----------------------------------
 # MAIN DASHBOARD
-# --------------------------------
+# ----------------------------------
 
 st.title("🚲 Bike Rental Prediction Dashboard")
 
 st.write(
-    "An intelligent machine learning system for "
-    "predicting hourly bike rental demand."
+    "An intelligent machine learning system "
+    "for predicting hourly bike rental demand."
 )
 
 st.divider()
 
-# Performance cards
-col1, col2, col3 = st.columns(3)
+# Performance Metrics
 
-with col1:
-    st.metric("Dataset Records", "17,379")
+c1, c2, c3 = st.columns(3)
 
-with col2:
-    st.metric("Best Model RMSE", "40.75")
+with c1:
+    st.metric(
+        "Dataset Records",
+        "17,379"
+    )
 
-with col3:
-    st.metric("Cross-Validation", "10 Folds")
+with c2:
+    st.metric(
+        "Mean RMSE",
+        "41.89"
+    )
+
+with c3:
+    st.metric(
+        "Cross-Validation",
+        "10 Folds"
+    )
 
 st.divider()
 
-# --------------------------------
-# INPUT FORM
-# --------------------------------
+# ----------------------------------
+# USER INPUT FORM
+# ----------------------------------
 
 st.header("📋 Prediction Settings")
 
 with st.form("bike_prediction_form"):
 
-    st.subheader("📅 Date and Time Information")
+    st.subheader("📅 Date and Time")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        season_label = st.selectbox(
+
+        season_name = st.selectbox(
             "Season",
-            ["Spring", "Summer", "Fall", "Winter"]
+            ["Winter", "Spring", "Summer", "Fall"]
         )
 
         season = {
-            "Spring": 1,
-            "Summer": 2,
-            "Fall": 3,
-            "Winter": 4
-        }[season_label]
+            "Winter": 1,
+            "Spring": 2,
+            "Summer": 3,
+            "Fall": 4
+        }[season_name]
 
         yr = st.selectbox(
             "Historical Year",
             [0, 1],
-            format_func=lambda x: "2011" if x == 0 else "2012"
+            format_func=lambda x:
+                "2011" if x == 0 else "2012"
         )
 
     with col2:
-        mnth = st.slider("Month", 1, 12, 6)
-        hr = st.slider("Hour of Day", 0, 23, 12)
+
+        mnth = st.slider(
+            "Month",
+            min_value=1,
+            max_value=12,
+            value=6
+        )
+
+        hr = st.slider(
+            "Hour of Day",
+            min_value=0,
+            max_value=23,
+            value=12
+        )
 
     with col3:
+
         weekday = st.selectbox(
             "Day of Week",
             list(range(7)),
             format_func=lambda x: [
-                "Sunday", "Monday", "Tuesday",
-                "Wednesday", "Thursday", "Friday",
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
                 "Saturday"
             ][x]
         )
@@ -163,20 +203,23 @@ with st.form("bike_prediction_form"):
         holiday = st.selectbox(
             "Holiday",
             [0, 1],
-            format_func=lambda x: "Yes" if x == 1 else "No"
+            format_func=lambda x:
+                "Yes" if x == 1 else "No"
         )
 
+    # Automatically calculate working day
     workingday = int(
         holiday == 0 and weekday not in [0, 6]
     )
 
     st.divider()
 
-    st.subheader("🌤️ Weather Information")
+    st.subheader("🌤️ Weather Conditions")
 
     col4, col5 = st.columns(2)
 
     with col4:
+
         weathersit = st.selectbox(
             "Weather Situation",
             [1, 2, 3, 4],
@@ -199,6 +242,7 @@ with st.form("bike_prediction_form"):
         )
 
     with col5:
+
         hum = st.slider(
             "Normalized Humidity",
             0.0, 1.0, 0.50
@@ -214,9 +258,9 @@ with st.form("bike_prediction_form"):
         use_container_width=True
     )
 
-# --------------------------------
-# PREDICTION
-# --------------------------------
+# ----------------------------------
+# MAKE PREDICTION
+# ----------------------------------
 
 if submitted:
 
@@ -235,41 +279,78 @@ if submitted:
         "windspeed": windspeed
     }])
 
-    # Match the model's original feature order
+    # Match training feature order
     input_data = input_data[features]
 
     prediction = model.predict(input_data)[0]
+
     prediction = max(0, round(prediction))
 
     st.divider()
 
     st.header("📊 Prediction Result")
 
-    st.success("Prediction completed successfully!")
-
-    st.metric(
-        label="Estimated Hourly Bike Rentals",
-        value=f"{prediction:,} bikes"
+    st.success(
+        "Prediction completed successfully!"
     )
 
-    st.progress(min(prediction / 1000, 1.0))
+    st.metric(
+        "Estimated Hourly Bike Rentals",
+        f"{prediction:,} bikes"
+    )
+
+    st.progress(
+        min(prediction / 1000, 1.0)
+    )
 
     st.caption(
-        "Visual scale: 0 to 1,000 rentals. "
+        "Visualization scale: 0 to 1,000 bikes. "
         "This is not a model confidence score."
     )
 
-    with st.expander("View Prediction Input Data"):
-        st.dataframe(input_data, use_container_width=True)
+    with st.expander("View Input Data"):
+        st.dataframe(
+            input_data,
+            use_container_width=True
+        )
 
-# --------------------------------
+# ----------------------------------
+# MODEL PERFORMANCE INFORMATION
+# ----------------------------------
+
+st.divider()
+
+st.subheader("📈 Model Performance")
+
+performance = pd.DataFrame({
+    "Model": [
+        "Original Extra Trees",
+        "Optimized Extra Trees"
+    ],
+    "Mean RMSE": [
+        40.75,
+        41.89
+    ]
+})
+
+st.bar_chart(
+    performance.set_index("Model")
+)
+
+st.caption(
+    "Lower RMSE means better predictive accuracy. "
+    "The optimized model is used for deployment."
+)
+
+# ----------------------------------
 # FOOTER
-# --------------------------------
+# ----------------------------------
 
 st.divider()
 
 st.caption(
-    "Bike Rental Prediction System | "
     "Machine Learning Assignment 3 | "
-    "Extra Trees Regressor | UCI Bike Sharing Dataset"
+    "Bike Rental Prediction System | "
+    "UCI Bike Sharing Dataset | "
+    "Extra Trees Regressor"
 )
